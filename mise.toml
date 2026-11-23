@@ -1,0 +1,4 @@
+[tools]
+"github:composer/composer" = "2.11.2"
+"github:symfony-cli/symfony-cli" = "5.22.2"
+php = "8.5"
