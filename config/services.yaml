@@ -18,6 +18,59 @@ services:
     # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: '../src/'
+        exclude:
+          - '../src/DependencyInjection/'
+          - '../src/Entity/'
+          - '../src/DTO'
+          - '../src/Kernel.php'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+    app.log_formatter:
+      class: App\Logging\LevelColoredFormatter
+      arguments:
+        $format: "%%datetime%% %%level_name%% --- [%%channel%%] : %%message%% %%context%% %%extra%%\n"
+        $dateFormat: "d-m-Y H:i:s.v"
+        $allowInlineLineBreaks: true
+        $ignoreEmptyContextAndExtra: true
+        $enableColors: true
+
+    app.prod_log_formatter:
+      class: App\Logging\LevelColoredFormatter
+      arguments:
+        $format: "%%datetime%% %%level_name%% --- [%%channel%%] : %%message%% %%context%% %%extra%%\n"
+        $dateFormat: "d-m-Y H:i:s.v"
+        $allowInlineLineBreaks: true
+        $ignoreEmptyContextAndExtra: true
+        $enableColors: false
+
+    Monolog\Processor\IntrospectionProcessor:
+      arguments:
+        $level: !php/const Monolog\Level::Debug
+        # Пропускаем классы самого Symfony/Monolog, чтобы найти именно ваш контроллер или сервис
+        $skipClassesPartials:
+          - 'Monolog\'
+          - 'Psr\Log\'
+          - 'Symfony\Bridge\Monolog\'
+      tags:
+        - { name: monolog.processor }
+
+    app.class_level_filter_handler:
+      class: App\Logging\ClassLevelFilterHandler
+      arguments:
+        # Оборачиваем стандартный хендлер monolog (в Symfony он называется monolog.handler.<имя_хендлера>)
+        $innerHandler: '@monolog.handler.console_out'
+        # Уровень по умолчанию для всего остального (системные классы Symfony, Doctrine, Request и т.д.)
+        $defaultLevel: 'error'
+        $rules:
+          'Symfony\': 'warning'
+          'App\': 'info'
+          'App\Controller\HomeController': 'debug'
+
+    app.prod_class_level_filter_handler:
+      class: App\Logging\ClassLevelFilterHandler
+      arguments:
+        $innerHandler: '@monolog.handler.prod_file'
+        $defaultLevel: 'warning'
+        $rules:
+          'App\': 'info'
