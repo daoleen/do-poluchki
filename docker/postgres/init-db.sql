@@ -1,1 +1,1 @@
-CREATE DATABASE poluchka OWNER poluchka;
+CREATE DATABASE keycloak OWNER poluchka;
